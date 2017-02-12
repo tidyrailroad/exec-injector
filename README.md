@@ -24,3 +24,35 @@ Injects a dependency into a container via its volumes.
 You need [docker](https://www.docker.com/).
 You need the container id of a running container.
 You shoud not need anything else.
+
+
+## Example Usage
+
+Create a container.
+```
+CIDFILE=$(mktemp) &&
+rm ${CIDFILE} &&
+docker run --detach --interactive --cidfile ${CIDFILE} alpine:3.4 sh
+
+```
+
+Create volumes.
+```
+SUDO=$(docker volume create) &&
+BIN=$(docker volume create) &&
+SBIN=$(docker volume create) &&
+```
+
+Inject an exec dependency into the volumes.
+```
+docker run --interactive --tty --rm --volume /var/run/docker.sock:/var/run/docker.sock temp/exec-injector --sudo ${SUDO} --bin ${BIN} --sbin ${SBIN} --container $(cat ${CIDFILE}) --program-name hi --command echo hello ${@}
+``
+
+Run a container with the volumes
+```
+docker run --interactive --tty --rm --volume /var/run/docker.sock:/var/run/docker.sock:ro --volume ${SUDO}:/etc/sudoers.d:ro --volume ${BIN}:/usr/local/bin --volume ${SBIN}:/usr/local/sbin:ro emorymerryman/base:0.2.0 hi world
+
+```
+
+In this example, there are 2 containers.
+The second container has a binary `/usr/local/bin/hello` that ultimately invokes the first container.
